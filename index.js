@@ -39,8 +39,8 @@ const requestRetry = (options, retries) => {
 const createRequest = (input, callback) => {
   const url = 'https://www.alphavantage.co/query'
   const func = input.data.function || 'CURRENCY_EXCHANGE_RATE'
-  const from = input.data.from || ''
-  const to = input.data.to || ''
+  const from = input.data.from || input.data.coin || ''
+  const to = input.data.to || input.data.market || ''
 
   let queryObj = {
     function: func,

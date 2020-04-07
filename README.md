@@ -5,8 +5,8 @@ Use this adapter for connecting to AlphaVantage's API from a Chainlink node.
 ## Input params
 
 - `function`: The function to call (defaults to CURRENCY_EXCHANGE_RATE)
-- `from`: The asset to query
-- `to`: The currency to convert to
+- `from` or `coin`: The asset to query
+- `to` or `market`: The currency to convert to
 
 ## Install
 
