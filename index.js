@@ -1,48 +1,30 @@
-const rp = require('request-promise')
-const retries = process.env.RETRIES || 3
-const delay = process.env.RETRY_DELAY || 1000
-const timeout = process.env.TIMEOUT || 1000
+const { Requester, Validator } = require('external-adapter')
 
-const requestRetry = (options, retries) => {
-  return new Promise((resolve, reject) => {
-    const retry = (options, n) => {
-      return rp(options)
-        .then(response => {
-          if (response.body.error || response.body['Error Message']) {
-            if (n === 1) {
-              reject(response)
-            } else {
-              setTimeout(() => {
-                retries--
-                retry(options, retries)
-              }, delay)
-            }
-          } else {
-            return resolve(response)
-          }
-        })
-        .catch(error => {
-          if (n === 1) {
-            reject(error)
-          } else {
-            setTimeout(() => {
-              retries--
-              retry(options, retries)
-            }, delay)
-          }
-        })
-    }
-    return retry(options, retries)
-  })
+const customError = (body) => {
+  if (body['Error Message']) return true
+  return false
+}
+
+const customParams = {
+  base: ['base', 'from', 'coin'],
+  quote: ['quote', 'to', 'market'],
+  function: false
 }
 
 const createRequest = (input, callback) => {
+  let validator
+  try {
+    validator = new Validator(input, customParams)
+  } catch (error) {
+    Requester.errorCallback(input.id, error, callback)
+  }
   const url = 'https://www.alphavantage.co/query'
-  const func = input.data.function || 'CURRENCY_EXCHANGE_RATE'
-  const from = input.data.from || input.data.coin || ''
-  const to = input.data.to || input.data.market || ''
+  const jobRunID = validator.validated.id
+  const func = validator.validated.data.function || 'CURRENCY_EXCHANGE_RATE'
+  const from = validator.validated.data.base
+  const to = validator.validated.data.quote
 
-  let queryObj = {
+  const qs = {
     function: func,
     from_currency: from,
     to_currency: to,
@@ -53,37 +35,18 @@ const createRequest = (input, callback) => {
     apikey: process.env.API_KEY
   }
 
-  for (let key in queryObj) {
-    if (queryObj[key] === '') {
-      delete queryObj[key]
-    }
-  }
-
   const options = {
-    url: url,
-    qs: queryObj,
-    json: true,
-    timeout,
-    resolveWithFullResponse: true
+    url,
+    qs
   }
-  requestRetry(options, retries)
+  Requester.requestRetry(options, customError)
     .then(response => {
-      const result = JSON.parse(response.body['Realtime Currency Exchange Rate']['5. Exchange Rate'])
-      response.body.result = result
-      callback(response.statusCode, {
-        jobRunID: input.id,
-        data: response.body,
-        result,
-        statusCode: response.statusCode
-      })
+      response.body.result = JSON.parse(Requester.validateResult(
+        response.body, ['Realtime Currency Exchange Rate', '5. Exchange Rate']))
+      Requester.successCallback(jobRunID, response.statusCode, response.body, callback)
     })
     .catch(error => {
-      callback(error.statusCode, {
-        jobRunID: input.id,
-        status: 'errored',
-        error,
-        statusCode: error.statusCode
-      })
+      Requester.errorCallback(jobRunID, error, callback)
     })
 }
 
