@@ -12,12 +12,7 @@ const customParams = {
 }
 
 const createRequest = (input, callback) => {
-  let validator
-  try {
-    validator = new Validator(input, customParams)
-  } catch (error) {
-    Requester.errorCallback(input.id, error, callback)
-  }
+  const validator = new Validator(input, customParams, callback)
   const url = 'https://www.alphavantage.co/query'
   const jobRunID = validator.validated.id
   const func = validator.validated.data.function || 'CURRENCY_EXCHANGE_RATE'
@@ -43,10 +38,10 @@ const createRequest = (input, callback) => {
     .then(response => {
       response.body.result = JSON.parse(Requester.validateResult(
         response.body, ['Realtime Currency Exchange Rate', '5. Exchange Rate']))
-      Requester.successCallback(jobRunID, response.statusCode, response.body, callback)
+      callback(response.statusCode, Requester.success(jobRunID, response))
     })
     .catch(error => {
-      Requester.errorCallback(jobRunID, error, callback)
+      callback(500, Requester.errored(jobRunID, error))
     })
 }
 
