@@ -5,7 +5,8 @@
   "description": "",
   "license": "MIT",
   "scripts": {
-    "test": "./node_modules/.bin/_mocha --timeout 0"
+    "test": "./node_modules/.bin/_mocha --timeout 0",
+    "lint": "eslint --ext js ."
   },
   "dependencies": {
     "external-adapter": "^0.1.14"
