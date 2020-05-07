@@ -1,6 +1,6 @@
 # Chainlink External Adapter for AlphaVantage
 
-Use this adapter for connecting to AlphaVantage's API from a Chainlink node.
+**This adapter has moved to our [external adapters monorepo](https://github.com/smartcontractkit/external-adapters-js)!**
 
 ## Input params
 
